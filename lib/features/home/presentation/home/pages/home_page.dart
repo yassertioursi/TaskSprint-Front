@@ -11,7 +11,6 @@ import 'package:flutter_application_1/features/home/presentation/home/widgets/Pr
 import 'package:flutter_application_1/features/home/presentation/home/widgets/TasksCategory.dart';
 import 'package:flutter_application_1/features/home/presentation/home/widgets/TodayTaskItem.dart';
 import 'package:flutter_application_1/features/home/domain/entities/task.dart';
-import 'package:flutter_application_1/features/home/domain/entities/project.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -25,6 +24,17 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  @override
+  void initState() {
+    super.initState();
+    // Load both tasks and task counts when page loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TasksBloc>().add(const GetTasksEvent());
+      context.read<TasksBloc>().add(const GetTaskCountsEvent());
+      context.read<ProjectsBloc>().add(const GetProjectsEvent());
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
@@ -64,7 +74,7 @@ class _HomePageState extends State<HomePage> {
                     _buildNotification(),
                   ],
                 ),
-                SizedBox(height: 30.h),
+                SizedBox(height: 20.h),
                 _buildTabButtons(),
                 SizedBox(height: 30.h),
                 _buildTabContent(),
@@ -80,10 +90,11 @@ class _HomePageState extends State<HomePage> {
 
   // Pull to refresh function
   Future<void> _onRefresh() async {
-    // Refresh both tasks and projects
+    // Refresh tasks, task counts, and projects
     context.read<TasksBloc>().add(const GetTasksEvent());
+    context.read<TasksBloc>().add(const GetTaskCountsEvent());
     context.read<ProjectsBloc>().add(const GetProjectsEvent());
-    
+
     // Wait a bit to show the refresh indicator
     await Future.delayed(const Duration(milliseconds: 500));
   }
@@ -162,9 +173,9 @@ class _HomePageState extends State<HomePage> {
   Widget _buildProjectsSection() {
     return BlocConsumer<ProjectsBloc, ProjectsState>(
       listener: (context, state) {
-        // Add initial event when widget is first built
-        if (state is ProjectsInitial) {
-          context.read<ProjectsBloc>().add(const GetProjectsEvent());
+        // Only handle errors if needed
+        if (state is ErrorProjectsState) {
+          // Handle error if needed
         }
       },
       builder: (context, state) {
@@ -199,7 +210,7 @@ class _HomePageState extends State<HomePage> {
                 padding: EdgeInsets.only(bottom: 15.h),
                 child: ProjectItem(
                   projectTitle: project.title,
-                  progress:0.5,
+                  progress: 0.5,
                   date: _formatDate(project.endTimestamp),
                 ),
               );
@@ -222,7 +233,9 @@ class _HomePageState extends State<HomePage> {
                   SizedBox(height: 10.h),
                   ElevatedButton(
                     onPressed: () {
-                      context.read<ProjectsBloc>().add(const GetProjectsEvent());
+                      context
+                          .read<ProjectsBloc>()
+                          .add(const GetProjectsEvent());
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.mainYellow,
@@ -241,24 +254,18 @@ class _HomePageState extends State<HomePage> {
           );
         }
 
-        // ProjectsInitial state - this will trigger the listener above
+        // For ProjectsInitial state, just show loading
         return Center(
           child: Padding(
             padding: EdgeInsets.all(20.h),
-            child: Text(
-              "Loading projects...",
-              style: TextStyle(
-                color: AppColors.subGrey,
-                fontSize: 16.sp,
-              ),
+            child: CircularProgressIndicator(
+              color: AppColors.mainYellow,
             ),
           ),
         );
       },
     );
   }
-
-  
 
   // Helper method to format date
   String _formatDate(DateTime dateTime) {
@@ -280,13 +287,71 @@ class _HomePageState extends State<HomePage> {
         SizedBox(height: 10.h),
         BlocConsumer<TasksBloc, TasksState>(
           listener: (context, state) {
-            // Add initial event when widget is first built
-            if (state is TasksInitial) {
-              context.read<TasksBloc>().add(const GetTasksEvent());
+            if (state is ErrorTasksState) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
+                ),
+              );
             }
           },
           builder: (context, state) {
-            if (state is LoadingTasks) {
+            if (state is TasksAndCountsState) {
+              if (state.isLoadingTasks) {
+                return Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20.h),
+                    child: CircularProgressIndicator(
+                      color: AppColors.mainYellow,
+                    ),
+                  ),
+                );
+              }
+
+              if (state.tasks == null) {
+                return Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20.h),
+                    child: Text(
+                      "Loading tasks...",
+                      style: TextStyle(
+                        color: AppColors.subGrey,
+                        fontSize: 16.sp,
+                      ),
+                    ),
+                  ),
+                );
+              }
+
+              if (state.tasks!.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20.h),
+                    child: Text(
+                      "No tasks for today!",
+                      style: TextStyle(
+                        color: AppColors.subGrey,
+                        fontSize: 16.sp,
+                      ),
+                    ),
+                  ),
+                );
+              }
+
+              return Column(
+                children: state.tasks!.map((task) {
+                  return TodayTaskItem(
+                    title: task.title,
+                    project: "Project ${task.projectId}",
+                    status: _mapTaskStatus(task.status),
+                    onTap: () => _onTaskTapped(task),
+                    onStatusTap: () => _onStatusTapped(task),
+                    onOptionsTap: () => _onOptionsTapped(task),
+                  );
+                }).toList(),
+              );
+            } else if (state is LoadingTasks) {
               return Center(
                 child: Padding(
                   padding: EdgeInsets.all(20.h),
@@ -341,6 +406,9 @@ class _HomePageState extends State<HomePage> {
                       ElevatedButton(
                         onPressed: () {
                           context.read<TasksBloc>().add(const GetTasksEvent());
+                          context
+                              .read<TasksBloc>()
+                              .add(const GetTaskCountsEvent());
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.mainYellow,
@@ -359,16 +427,11 @@ class _HomePageState extends State<HomePage> {
               );
             }
 
-            // TasksInitial state - this will trigger the listener above
             return Center(
               child: Padding(
                 padding: EdgeInsets.all(20.h),
-                child: Text(
-                  "Loading tasks...",
-                  style: TextStyle(
-                    color: AppColors.subGrey,
-                    fontSize: 16.sp,
-                  ),
+                child: CircularProgressIndicator(
+                  color: AppColors.mainYellow,
                 ),
               ),
             );
@@ -428,7 +491,12 @@ class _HomePageState extends State<HomePage> {
       child: BlocBuilder<TasksBloc, TasksState>(
         builder: (context, state) {
           int taskCount = 0;
-          if (state is TasksLoaded) {
+
+          if (state is TasksAndCountsState) {
+            taskCount = state.taskCounts?.total ?? state.tasks?.length ?? 0;
+          } else if (state is TaskCountsLoaded) {
+            taskCount = state.taskCounts.total;
+          } else if (state is TasksLoaded) {
             taskCount = state.tasks.length;
           }
 

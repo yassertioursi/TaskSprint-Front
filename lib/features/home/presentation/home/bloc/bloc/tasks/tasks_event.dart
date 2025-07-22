@@ -1,4 +1,3 @@
-
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
@@ -7,14 +6,18 @@ sealed class TasksEvent extends Equatable {
   const TasksEvent();
 }
 
-class GetTasksEvent extends TasksEvent 
-  {
+class GetTasksEvent extends TasksEvent {
   const GetTasksEvent();
-  
+
   @override
-
   List<Object?> get props => [];
-
-
 }
 
+class GetTaskCountsEvent extends TasksEvent {
+
+
+  const GetTaskCountsEvent();
+
+  @override
+  List<Object?> get props => [];
+}

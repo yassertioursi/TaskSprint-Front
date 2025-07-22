@@ -12,6 +12,7 @@ import 'package:flutter_application_1/features/home/data/repositories/project_re
 import 'package:flutter_application_1/features/home/domain/repositories/projects_repository.dart';
 import 'package:flutter_application_1/features/home/domain/usecases/projects/create_project.dart';
 import 'package:flutter_application_1/features/home/domain/usecases/projects/get_projects.dart';
+import 'package:flutter_application_1/features/home/domain/usecases/tasks/get_task_counts.dart';
 import 'package:flutter_application_1/features/home/domain/usecases/tasks/get_tasks.dart';
 import 'package:flutter_application_1/features/home/domain/usecases/tasks/create_task.dart';
 import 'package:flutter_application_1/features/home/presentation/create_project/bloc/create_project_bloc.dart';
@@ -31,8 +32,8 @@ Future<void> init() async {
     Dio dio = Dio(BaseOptions(
       validateStatus: (status) => status != null && status < 500,
       baseUrl: "http://localhost:8000/api",
-      connectTimeout: const Duration(seconds: 5),
-      receiveTimeout: const Duration(seconds: 3),
+      connectTimeout: const Duration(seconds: 20),
+      receiveTimeout: const Duration(seconds: 20),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -96,13 +97,14 @@ Future<void> init() async {
   sl.registerLazySingleton(() => LoginUseCase(sl()));
   sl.registerLazySingleton(() => SignupUseCase(sl()));
   sl.registerLazySingleton(() => GetTasksUseCase(sl()));
-  sl.registerLazySingleton(() => CreateTaskUseCase(sl()));
+   sl.registerLazySingleton(() => GetTaskCountsUseCase(sl()));
+ sl.registerLazySingleton(() => CreateTaskUseCase(sl()));  
   sl.registerLazySingleton(() => GetProjectsUseCase(sl()));
    sl.registerLazySingleton(() => CreateProjectUseCase(sl()));
 
   // Bloc
   sl.registerFactory(() => LoginSignupBloc(login: sl(), signup: sl()));
-  sl.registerFactory(() => TasksBloc(getTasks: sl()));
+  sl.registerFactory(() => TasksBloc(getTasks: sl()  , getTaskCounts: sl()));
   sl.registerFactory(() => CreateTaskBloc(createTask: sl()));
   sl.registerFactory(() => ProjectsBloc(getProjects: sl()));
   sl.registerFactory(() => CreateProjectBloc(createProject: sl()));

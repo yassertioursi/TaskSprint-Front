@@ -1,10 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_application_1/core/errors/exeptions.dart';
+import 'package:flutter_application_1/features/home/data/models/task_counts_model.dart';
 import 'package:flutter_application_1/features/home/data/models/task_model.dart';
 
 abstract class TaskRemoteDataSource {
   Future<List<TaskModel>> getTasks();
   Future<List<TaskModel>> getTasksByDate(DateTime date);
+  Future<TaskCountsModel> getTaskCounts();
   Future<TaskModel> createTask(TaskModel task);
   Future<TaskModel> updateTask(TaskModel task);
   Future<void> deleteTask(int id);
@@ -87,6 +89,10 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
     }
   }
 
+
+
+ 
+  
   @override
   Future<TaskModel> createTask(TaskModel task) async {
     try {
@@ -123,6 +129,8 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       throw const ServerException(message: "Failed to create task");
     }
   }
+
+
 
   @override
   Future<TaskModel> updateTask(TaskModel task) async {
@@ -214,5 +222,45 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
     }
 
     return "Network error occurred";
+  }
+  
+   @override
+  Future<TaskCountsModel> getTaskCounts({DateTime? date}) async {
+    try {
+      String url = '/tasks/counts';
+      
+     
+
+      final response = await dio.get(
+        url,
+        options: Options(
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization":
+                "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwMDAvYXBpL2F1dGgvbG9naW4iLCJpYXQiOjE3NTI4NDkwNDEsImV4cCI6MTc1Mjg1MjY0MSwibmJmIjoxNzUyODQ5MDQxLCJqdGkiOiJ1cTBXeW91NnZZbmxlbmFoIiwic3ViIjoiMSIsInBydiI6IjIzYmQ1Yzg5NDlmNjAwYWRiMzllNzAxYzQwMDg3MmRiN2E1OTc2ZjcifQ.8M_iXTN6_C6iwluOGTS0YAMs7afaao-cyQQmzmIJRZs",
+          },
+          validateStatus: (status) => status != null && status < 500,
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        print("Get task counts successful: ${response.data}");
+        return TaskCountsModel.fromJson(response.data['data']);
+      } else {
+        final errorMessage = _extractErrorMessage(response.data);
+        print(
+            "Get task counts failed with status ${response.statusCode}: $errorMessage");
+        throw ServerException(message: errorMessage);
+      }
+    } on DioException catch (e) {
+      final errorMessage = _extractErrorMessage(e.response?.data);
+      print("DioException on get task counts: $errorMessage");
+      throw ServerException(message: errorMessage);
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      print("General error on get task counts: $e");
+      throw const ServerException(message: "Failed to get task counts");
+    }
   }
 }

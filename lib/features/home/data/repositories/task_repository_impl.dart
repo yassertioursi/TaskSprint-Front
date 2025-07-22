@@ -5,6 +5,7 @@ import 'package:flutter_application_1/core/network/network_info.dart';
 import 'package:flutter_application_1/features/home/data/datasources/tasks_remote_data_source.dart';
 import 'package:flutter_application_1/features/home/data/models/task_model.dart';
 import 'package:flutter_application_1/features/home/domain/entities/task.dart';
+import 'package:flutter_application_1/features/home/domain/entities/task_counts.dart';
 import 'package:flutter_application_1/features/home/domain/repositories/tasks_repository.dart';
 
 class TaskRepositoryImpl implements TasksRepository {
@@ -106,6 +107,20 @@ class TaskRepositoryImpl implements TasksRepository {
         return const Right(unit);
       } on ServerException catch (e) {
         return Left(ServerFailure( e.message));
+      }
+    } else {
+      return const Left(OfflineFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, TaskCounts>> getTaskCounts() async {
+    if (await networkInfo.isConnected) {
+      try {
+        final taskCounts = await taskRemoteDataSource.getTaskCounts();
+        return Right(taskCounts);
+      } on ServerException catch (e) {
+        return Left(ServerFailure(e.message));
       }
     } else {
       return const Left(OfflineFailure());

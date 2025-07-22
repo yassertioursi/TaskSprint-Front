@@ -7,11 +7,13 @@ class TaskCategory extends StatelessWidget {
   final String categoryName;
   final int taskCount;
   final int totalTasks;
-  const TaskCategory(
-      {super.key,
-      required this.categoryName,
-      required this.taskCount,
-      required this.totalTasks});
+  
+  const TaskCategory({
+    super.key,
+    required this.categoryName,
+    required this.taskCount,
+    required this.totalTasks,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +61,7 @@ class TaskCategory extends StatelessWidget {
           onPressed: () {},
           icon: FaIcon(
             FontAwesomeIcons.angleRight,
-            color: AppColors.mainYellow , 
+            color: AppColors.mainYellow, 
             size: 20.sp,
           ),
         ), 
