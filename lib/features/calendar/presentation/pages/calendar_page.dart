@@ -5,6 +5,7 @@ import 'package:flutter_application_1/features/calendar/presentation/bloc/cubit/
 import 'package:flutter_application_1/features/calendar/presentation/bloc/cubit/calendar_state.dart';
 import 'package:flutter_application_1/features/calendar/presentation/widgets/search_field.dart';
 import 'package:flutter_application_1/features/home/presentation/home/widgets/TodayTaskItem.dart';
+import 'package:flutter_application_1/features/home/presentation/create_project/presentation/create_project.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -41,19 +42,15 @@ class CalendarPage extends StatelessWidget {
     );
   }
 
-
-
   Widget _buildSearchableTasks() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: Column(
         children: [
-          _buildTasksAdd() , 
+          _buildTasksAdd(),
           SizedBox(height: 15.h),
           TodayTaskItem(title: "Task a", project: "project a")
-          
-          
-          ],
+        ],
       ),
     );
   }
@@ -76,30 +73,41 @@ class CalendarPage extends StatelessWidget {
   }
 
   Widget _buildAddButton(String title) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-      decoration: BoxDecoration(
-        color: AppColors.mainYellow,
-        borderRadius: BorderRadius.circular(15.r),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Icon(
-            FontAwesomeIcons.plus,
-            color: AppColors.mainWhite,
-            size: 16.sp,
+    return Builder(
+      builder: (context) => InkWell(
+        onTap: () {
+          if (title == "Project") {
+            CreateProjectBottomSheetExtension(context).showCreateProjectBottomSheet();
+          } else if (title == "Task") {
+            Navigator.of(context).pushNamed('/create-task');
+          }
+        },
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+          decoration: BoxDecoration(
+            color: AppColors.mainYellow,
+            borderRadius: BorderRadius.circular(15.r),
           ),
-          SizedBox(width: 6.w),
-          Text(
-            "Add $title",
-            style: TextStyle(
-              color: AppColors.mainWhite,
-              fontSize: 14.sp,
-              fontWeight: FontWeight.bold,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(
+                FontAwesomeIcons.plus,
+                color: AppColors.mainWhite,
+                size: 16.sp,
+              ),
+              SizedBox(width: 6.w),
+              Text(
+                "Add $title",
+                style: TextStyle(
+                  color: AppColors.mainWhite,
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -228,6 +236,19 @@ class CalendarPage extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+extension CreateProjectBottomSheetExtension on BuildContext {
+  void showCreateProjectBottomSheet() {
+    showModalBottomSheet(
+      context: this,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      enableDrag: true,
+      isDismissible: true,
+      builder: (context) => const CreateProjectBottomSheet(),
     );
   }
 }

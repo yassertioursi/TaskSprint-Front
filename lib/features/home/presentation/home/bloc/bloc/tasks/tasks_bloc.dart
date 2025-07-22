@@ -2,10 +2,10 @@ import 'package:bloc/bloc.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_application_1/core/errors/failure.dart';
 import 'package:flutter_application_1/features/home/domain/entities/task.dart';
-import 'package:flutter_application_1/features/home/domain/usecases/get_tasks.dart';
+import 'package:flutter_application_1/features/home/domain/usecases/tasks/get_tasks.dart';
 
-import 'package:flutter_application_1/features/home/presentation/home/bloc/bloc/tasks_event.dart';
-import 'package:flutter_application_1/features/home/presentation/home/bloc/bloc/tasks_state.dart';
+import 'package:flutter_application_1/features/home/presentation/home/bloc/bloc/tasks/tasks_event.dart';
+import 'package:flutter_application_1/features/home/presentation/home/bloc/bloc/tasks/tasks_state.dart';
 
 
 

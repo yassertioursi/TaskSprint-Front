@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/navigation/app_router.dart';
 import 'package:flutter_application_1/core/navigation/app_routes.dart';
 import 'package:flutter_application_1/features/auth/presentation/bloc/bloc/login_signup_bloc.dart';
+import 'package:flutter_application_1/features/home/presentation/create_project/bloc/create_project_bloc.dart';
 import 'package:flutter_application_1/features/home/presentation/create_task/bloc/bloc/create_task_bloc.dart';
-import 'package:flutter_application_1/features/home/presentation/home/bloc/bloc/tasks_bloc.dart';
+import 'package:flutter_application_1/features/home/presentation/home/bloc/bloc/projects/projects_bloc.dart';
+import 'package:flutter_application_1/features/home/presentation/home/bloc/bloc/tasks/tasks_bloc.dart';
 import 'package:flutter_application_1/features/auth/presentation/pages/login_page.dart';
 import 'package:flutter_application_1/features/auth/presentation/pages/signup_page.dart';
 import 'package:flutter_application_1/features/calendar/presentation/pages/calendar_page.dart';
@@ -58,9 +60,31 @@ class MainApp extends StatelessWidget {
               }
             },
           ),
+
+           BlocProvider(
+            create: (context) {
+              try {
+                return di.sl<ProjectsBloc>();
+              } catch (e) {
+                print('Error initializing TasksBloc: $e');
+                rethrow;
+              }
+            },
+          ),
+
+               BlocProvider(
+            create: (context) {
+              try {
+                return di.sl<CreateProjectBloc>();
+              } catch (e) {
+                print('Error initializing TasksBloc: $e');
+                rethrow;
+              }
+            },
+          ),
         ],
         child: MaterialApp(
-          initialRoute: AppRoutes.createTask,
+          initialRoute: AppRoutes.mainNavigation,
           onGenerateRoute: AppRouter.generateRoute,
           debugShowCheckedModeBanner: false,
           home: const SafeArea(child: CreateTask()),

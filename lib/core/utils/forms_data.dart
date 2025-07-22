@@ -9,10 +9,10 @@ class CreateTaskFormData {
   final TextEditingController startTimeController = TextEditingController();
   final TextEditingController endTimeController = TextEditingController();
   final TextEditingController projectController = TextEditingController();
-  
+
   // Form key
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-  
+
   // Selected values
   DateTime? selectedDate;
   TimeOfDay? startTime;
@@ -54,7 +54,8 @@ class CreateTaskFormData {
     if (selectedDate == null) {
       return 'Please select a date';
     }
-    if (selectedDate!.isBefore(DateTime.now().subtract(const Duration(days: 1)))) {
+    if (selectedDate!
+        .isBefore(DateTime.now().subtract(const Duration(days: 1)))) {
       return 'Date cannot be in the past';
     }
     return null;
@@ -71,7 +72,7 @@ class CreateTaskFormData {
     if (endTime == null) {
       return 'Please select end time';
     }
-    
+
     if (startTime != null && endTime != null) {
       final startDateTime = DateTime(
         selectedDate?.year ?? DateTime.now().year,
@@ -80,7 +81,7 @@ class CreateTaskFormData {
         startTime!.hour,
         startTime!.minute,
       );
-      
+
       final endDateTime = DateTime(
         selectedDate?.year ?? DateTime.now().year,
         selectedDate?.month ?? DateTime.now().month,
@@ -88,12 +89,13 @@ class CreateTaskFormData {
         endTime!.hour,
         endTime!.minute,
       );
-      
-      if (endDateTime.isBefore(startDateTime) || endDateTime.isAtSameMomentAs(startDateTime)) {
+
+      if (endDateTime.isBefore(startDateTime) ||
+          endDateTime.isAtSameMomentAs(startDateTime)) {
         return 'End time must be after start time';
       }
     }
-    
+
     return null;
   }
 
@@ -145,7 +147,7 @@ class CreateTaskFormData {
     startTimeController.clear();
     endTimeController.clear();
     projectController.clear();
-    
+
     selectedDate = null;
     startTime = null;
     endTime = null;
@@ -155,10 +157,114 @@ class CreateTaskFormData {
   // Check if form has data
   bool get hasData {
     return titleController.text.isNotEmpty ||
-           descriptionController.text.isNotEmpty ||
-           selectedDate != null ||
-           startTime != null ||
-           endTime != null ||
-           selectedProject != null;
+        descriptionController.text.isNotEmpty ||
+        selectedDate != null ||
+        startTime != null ||
+        endTime != null ||
+        selectedProject != null;
+  }
+}
+
+class CreateProjectFormData {
+  // Controllers
+  final TextEditingController titleController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
+  final TextEditingController startDateController = TextEditingController();
+  final TextEditingController endDateController = TextEditingController();
+
+  // Form key
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
+  // Selected values
+  DateTime? startDate;
+  DateTime? endDate;
+
+  // Dispose all controllers
+  void dispose() {
+    titleController.dispose();
+    descriptionController.dispose();
+    startDateController.dispose();
+    endDateController.dispose();
+  }
+
+  // Validators
+  String? validateTitle(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Project title is required';
+    }
+    if (value.trim().length < 3) {
+      return 'Title must be at least 3 characters';
+    }
+    return null;
+  }
+
+  String? validateDescription(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Project description is required';
+    }
+    if (value.trim().length < 10) {
+      return 'Description must be at least 10 characters';
+    }
+    return null;
+  }
+
+  String? validateStartDate(String? value) {
+    if (startDate == null) {
+      return 'Please select start date';
+    }
+    if (startDate!.isBefore(DateTime.now().subtract(const Duration(days: 1)))) {
+      return 'Start date cannot be in the past';
+    }
+    return null;
+  }
+
+  String? validateEndDate(String? value) {
+    if (endDate == null) {
+      return 'Please select end date';
+    }
+
+    if (startDate != null && endDate != null) {
+      if (endDate!.isBefore(startDate!) ||
+          endDate!.isAtSameMomentAs(startDate!)) {
+        return 'End date must be after start date';
+      }
+    }
+
+    return null;
+  }
+
+  // Helper methods
+  void setStartDate(DateTime date) {
+    startDate = date;
+    startDateController.text = DateFormat('EEEE, d MMM yyyy').format(date);
+  }
+
+  void setEndDate(DateTime date) {
+    endDate = date;
+    endDateController.text = DateFormat('EEEE, d MMM yyyy').format(date);
+  }
+
+  // Validation check
+  bool isFormValid() {
+    return formKey.currentState?.validate() ?? false;
+  }
+
+  // Clear all form data
+  void clear() {
+    titleController.clear();
+    descriptionController.clear();
+    startDateController.clear();
+    endDateController.clear();
+
+    startDate = null;
+    endDate = null;
+  }
+
+  // Check if form has data
+  bool get hasData {
+    return titleController.text.isNotEmpty ||
+        descriptionController.text.isNotEmpty ||
+        startDate != null ||
+        endDate != null;
   }
 }

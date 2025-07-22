@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/constants/app_colors.dart';
 import 'package:flutter_application_1/features/home/presentation/create_task/widgets/text_field.dart';
+import 'package:flutter_application_1/features/home/domain/entities/project.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ProjectField extends StatefulWidget {
@@ -10,8 +11,9 @@ class ProjectField extends StatefulWidget {
   final FontWeight? fontWeight;
   final TextEditingController? controller;
   final String? Function(String?)? validator;
-  final Function(String)? onProjectSelected;
-  final List<String> projects;
+  final Function(ProjectEntity)? onProjectSelected; // Changed to ProjectEntity
+  final List<ProjectEntity> projects; // Changed to ProjectEntity list
+  final bool isLoading;
 
   const ProjectField({
     super.key,
@@ -22,7 +24,9 @@ class ProjectField extends StatefulWidget {
     this.controller,
     this.validator,
     this.onProjectSelected,
-    this.projects = const ['Work', 'Personal', 'Study', 'Health', 'Shopping'],
+    this.projects = const [], // Empty by default
+    this.isLoading = false,
+
   });
 
   @override
@@ -45,10 +49,10 @@ class _ProjectFieldState extends State<ProjectField> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: _toggle,
+      onTap: widget.isLoading ? null : _toggle,
       child: AbsorbPointer(
         child: UnderlinedTextField(
-          hintText: widget.hintText,
+          hintText: widget.isLoading ? 'Loading projects...' : widget.hintText,
           controller: _effectiveController,
           validator: widget.validator,
           underlineColor: widget.underlineColor ?? AppColors.mainWhite,
@@ -56,11 +60,11 @@ class _ProjectFieldState extends State<ProjectField> {
           labelTextColor: AppColors.mainYellow,
           fontWeight: widget.fontWeight ?? FontWeight.w500,
           keyboardType: TextInputType.none,
-          suffixIcon: Icon(
-            _isOpen ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-            color: widget.textColor ?? AppColors.mainYellow,
-            size: 25.sp,
-          ),
+          suffixIcon:  Icon(
+                  _isOpen ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                  color: widget.underlineColor ?? AppColors.mainYellow,
+                  size: 25.sp,
+                ),
         ),
       ),
     );
@@ -86,14 +90,12 @@ class _ProjectFieldState extends State<ProjectField> {
 
     return OverlayEntry(
       builder: (_) => GestureDetector(
-        onTap: _close, // Close dropdown when tapping outside
+        onTap: _close,
         child: Stack(
           children: [
-            // Invisible full-screen container to catch taps outside
             Positioned.fill(
               child: Container(color: Colors.transparent),
             ),
-            // Dropdown content
             Positioned(
               left: position.dx,
               top: position.dy + box.size.height + 8.h,
@@ -119,20 +121,22 @@ class _ProjectFieldState extends State<ProjectField> {
                       ),
                     ],
                   ),
-                  child: ListView.separated(
-                    padding: EdgeInsets.zero,
-                    shrinkWrap: true,
-                    itemCount: widget.projects.length,
-                    separatorBuilder: (_, __) => Divider(
-                      height: 1,
-                      color: (widget.textColor == AppColors.mainBlack
-                              ? AppColors.subGrey
-                              : AppColors.mainWhite)
-                          .withOpacity(0.2),
-                    ),
-                    itemBuilder: (_, index) =>
-                        _buildItem(widget.projects[index]),
-                  ),
+                  child: widget.projects.isEmpty
+                      ? _buildEmptyState()
+                      : ListView.separated(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: widget.projects.length,
+                          separatorBuilder: (_, __) => Divider(
+                            height: 1,
+                            color: (widget.textColor == AppColors.mainBlack
+                                    ? AppColors.subGrey
+                                    : AppColors.mainWhite)
+                                .withOpacity(0.2),
+                          ),
+                          itemBuilder: (_, index) =>
+                              _buildItem(widget.projects[index]),
+                        ),
                 ),
               ),
             ),
@@ -142,8 +146,22 @@ class _ProjectFieldState extends State<ProjectField> {
     );
   }
 
-  Widget _buildItem(String project) {
-    final selected = _effectiveController.text == project;
+  Widget _buildEmptyState() {
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      child: Text(
+        'No projects available',
+        style: TextStyle(
+          color: AppColors.subGrey,
+          fontSize: 14.sp,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  Widget _buildItem(ProjectEntity project) {
+    final selected = _effectiveController.text == project.title;
     final isDarkMode = widget.textColor != AppColors.mainBlack;
 
     return InkWell(
@@ -162,11 +180,11 @@ class _ProjectFieldState extends State<ProjectField> {
               width: 24.w,
               height: 24.h,
               decoration: BoxDecoration(
-                color: _getProjectColor(project),
+                color: AppColors.mainYellow,
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                _getProjectIcon(project),
+                Icons.folder,
                 color: Colors.white,
                 size: 14.sp,
               ),
@@ -175,7 +193,7 @@ class _ProjectFieldState extends State<ProjectField> {
             // Project name
             Expanded(
               child: Text(
-                project,
+                project.title,
                 style: TextStyle(
                   color: selected
                       ? (widget.underlineColor ?? AppColors.mainYellow)
@@ -200,46 +218,8 @@ class _ProjectFieldState extends State<ProjectField> {
     );
   }
 
-  Color _getProjectColor(String project) {
-    switch (project.toLowerCase()) {
-      case 'work':
-        return Colors.blue;
-      case 'personal':
-        return Colors.green;
-      case 'study':
-        return Colors.purple;
-      case 'health':
-        return Colors.red;
-      case 'shopping':
-        return Colors.orange;
-      case 'travel':
-        return Colors.teal;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  IconData _getProjectIcon(String project) {
-    switch (project.toLowerCase()) {
-      case 'work':
-        return Icons.work;
-      case 'personal':
-        return Icons.person;
-      case 'study':
-        return Icons.school;
-      case 'health':
-        return Icons.favorite;
-      case 'shopping':
-        return Icons.shopping_cart;
-      case 'travel':
-        return Icons.flight;
-      default:
-        return Icons.folder;
-    }
-  }
-
-  void _select(String project) {
-    setState(() => _effectiveController.text = project);
+  void _select(ProjectEntity project) {
+    setState(() => _effectiveController.text = project.title);
     widget.onProjectSelected?.call(project);
     _close();
   }
@@ -247,7 +227,6 @@ class _ProjectFieldState extends State<ProjectField> {
   @override
   void dispose() {
     _close();
-    // Only dispose internal controller if we created it
     if (widget.controller == null) {
       _internalController.dispose();
     }

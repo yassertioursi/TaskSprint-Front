@@ -5,11 +5,15 @@ import 'package:flutter_application_1/features/auth/presentation/widgets/login_s
 import 'package:flutter_application_1/features/home/presentation/create_task/bloc/bloc/create_task_bloc.dart';
 import 'package:flutter_application_1/features/home/presentation/create_task/bloc/bloc/create_task_event.dart';
 import 'package:flutter_application_1/features/home/presentation/create_task/bloc/bloc/create_task_state.dart';
+import 'package:flutter_application_1/features/home/presentation/home/bloc/bloc/projects/projects_bloc.dart';
+import 'package:flutter_application_1/features/home/presentation/home/bloc/bloc/projects/projects_event.dart';
+import 'package:flutter_application_1/features/home/presentation/home/bloc/bloc/projects/projects_state.dart';
 import 'package:flutter_application_1/features/home/presentation/create_task/widgets/date_field.dart';
 import 'package:flutter_application_1/features/home/presentation/create_task/widgets/project_field.dart';
 import 'package:flutter_application_1/features/home/presentation/create_task/widgets/text_field.dart';
 import 'package:flutter_application_1/features/home/presentation/create_task/widgets/time_field.dart';
 import 'package:flutter_application_1/features/home/domain/entities/task.dart';
+import 'package:flutter_application_1/features/home/domain/entities/project.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -22,11 +26,14 @@ class CreateTask extends StatefulWidget {
 
 class _CreateTaskState extends State<CreateTask> {
   late final CreateTaskFormData _formData;
+  ProjectEntity? selectedProject; 
 
   @override
   void initState() {
     super.initState();
     _formData = CreateTaskFormData();
+    // Load projects when page opens
+    context.read<ProjectsBloc>().add(const GetProjectsEvent());
   }
 
   @override
@@ -93,7 +100,7 @@ class _CreateTaskState extends State<CreateTask> {
           hintText: 'Title',
           controller: _formData.titleController,
           keyboardType: TextInputType.text,
-          underlineColor: AppColors.mainBlack , 
+          underlineColor: AppColors.mainBlack,
           textColor: AppColors.mainBlack,
           labelTextColor: AppColors.mainWhite,
           fontWeight: FontWeight.w500,
@@ -143,21 +150,29 @@ class _CreateTaskState extends State<CreateTask> {
             keyboardType: TextInputType.multiline,
             underlineColor: AppColors.mainYellow,
             textColor: AppColors.mainWhite,
-            labelTextColor:  AppColors.mainYellow ,
+            labelTextColor: AppColors.mainYellow,
             fontWeight: FontWeight.w500,
             validator: _formData.validateDescription,
           ),
           SizedBox(height: 40.h),
-          ProjectField(
-            hintText: 'Project',
-            underlineColor: AppColors.mainYellow,
-            textColor: AppColors.mainWhite,
-            fontWeight: FontWeight.w500,
-            controller: _formData.projectController,
-            validator: _formData.validateProject,
-            projects: const ['Work', 'Personal', 'Study', 'Health', 'Shopping', 'Travel'],
-            onProjectSelected: (project) {
-              _formData.setProject(project);
+          BlocBuilder<ProjectsBloc, ProjectsState>(
+            builder: (context, projectsState) {
+              return ProjectField(
+                hintText: 'Project',
+                underlineColor: AppColors.mainYellow,
+                textColor: AppColors.mainWhite,
+                fontWeight: FontWeight.w500,
+                controller: _formData.projectController,
+                validator: _formData.validateProject,
+                projects: projectsState is ProjectsLoaded
+                    ? projectsState.projects
+                    : [],
+                isLoading: projectsState is LoadingProjects,
+                onProjectSelected: (project) {
+                  selectedProject = project;
+                  _formData.setProject(project.title); // Set title in form
+                },
+              );
             },
           ),
           SizedBox(height: 40.h),
@@ -166,7 +181,8 @@ class _CreateTaskState extends State<CreateTask> {
             child: BlocBuilder<CreateTaskBloc, CreateTaskState>(
               builder: (context, state) {
                 return LoginSignupButton(
-                  buttonText: state is CreatingTask ? "Creating..." : "Create Task",
+                  buttonText:
+                      state is CreatingTask ? "Creating..." : "Create Task",
                   onPressed: state is CreatingTask ? null : _onCreateTask,
                 );
               },
@@ -215,11 +231,11 @@ class _CreateTaskState extends State<CreateTask> {
   }
 
   void _onCreateTask() {
-    if (!_formData.isFormValid()) {
+    if (!_formData.isFormValid() || selectedProject == null) {
       return;
     }
 
-    // Create TaskEntity
+    // Create TaskEntity with real project ID
     final taskEntity = TaskEntity(
       id: 0,
       title: _formData.titleController.text.trim(),
@@ -239,7 +255,7 @@ class _CreateTaskState extends State<CreateTask> {
         _formData.endTime!.minute,
       ),
       status: TaskEntityStatus.toDo,
-      projectId: _getProjectId(_formData.selectedProject!),
+      projectId: selectedProject!.id, // Use actual project ID
       userId: 0,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
@@ -247,20 +263,8 @@ class _CreateTaskState extends State<CreateTask> {
 
     // Submit to BLoC
     context.read<CreateTaskBloc>().add(
-      CreateTaskSubmitEvent(task: taskEntity),
-    );
-  }
-
-  int _getProjectId(String projectName) {
-    switch (projectName.toLowerCase()) {
-      case 'work': return 1;
-      case 'personal': return 2;
-      case 'study': return 3;
-      case 'health': return 4;
-      case 'shopping': return 5;
-      case 'travel': return 6;
-      default: return 1;
-    }
+          CreateTaskSubmitEvent(task: taskEntity),
+        );
   }
 
   Widget _buildCreateHeader(BuildContext context) {

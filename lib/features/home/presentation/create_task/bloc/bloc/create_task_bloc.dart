@@ -2,7 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_application_1/core/errors/failure.dart';
 import 'package:flutter_application_1/features/home/domain/entities/task.dart';
-import 'package:flutter_application_1/features/home/domain/usecases/create_task.dart';
+import 'package:flutter_application_1/features/home/domain/usecases/tasks/create_task.dart';
 import 'package:flutter_application_1/features/home/presentation/create_task/bloc/bloc/create_task_event.dart';
 import 'package:flutter_application_1/features/home/presentation/create_task/bloc/bloc/create_task_state.dart';
 

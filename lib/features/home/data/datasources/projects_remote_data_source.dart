@@ -1,25 +1,24 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_application_1/core/errors/exeptions.dart';
-import 'package:flutter_application_1/features/home/data/models/task_model.dart';
+import 'package:flutter_application_1/features/home/data/models/project_model.dart';
 
-abstract class TaskRemoteDataSource {
-  Future<List<TaskModel>> getTasks();
-  Future<List<TaskModel>> getTasksByDate(DateTime date);
-  Future<TaskModel> createTask(TaskModel task);
-  Future<TaskModel> updateTask(TaskModel task);
-  Future<void> deleteTask(int id);
+abstract class ProjectRemoteDataSource {
+  Future<List<ProjectModel>> getProjects();
+  Future<ProjectModel> createProject(ProjectModel project);
+  Future<ProjectModel> updateProject(ProjectModel project);
+  Future<void> deleteProject(int id);
 }
 
-class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
+class ProjectRemoteDataSourceImpl implements ProjectRemoteDataSource {
   final Dio dio;
 
-  TaskRemoteDataSourceImpl({required this.dio});
+  ProjectRemoteDataSourceImpl({required this.dio});
 
   @override
-  Future<List<TaskModel>> getTasks() async {
+  Future<List<ProjectModel>> getProjects() async {
     try {
       final response = await dio.get(
-        '/tasks',
+        '/projects',
         options: Options(
           headers: {
             "Content-Type": "application/json",
@@ -29,70 +28,32 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       );
 
       if (response.statusCode == 200) {
-        final data = response.data['data']['tasks'] as List;
-        return data.map((json) => TaskModel.fromJson(json)).toList();
+        final data = response.data['data']['projects'] as List;
+        return data.map((json) => ProjectModel.fromJson(json)).toList();
       } else {
         final errorMessage = _extractErrorMessage(response.data);
         print(
-            "Get tasks failed with status ${response.statusCode}: $errorMessage");
+            "Get projects failed with status ${response.statusCode}: $errorMessage");
         throw ServerException(message: errorMessage);
       }
     } on DioException catch (e) {
       final errorMessage = _extractErrorMessage(e.response?.data);
-      print("DioException on get tasks: $errorMessage");
+      print("DioException on get projects: $errorMessage");
       throw ServerException(message: errorMessage);
     } on ServerException {
       rethrow;
     } catch (e) {
-      print("General error on get tasks: $e");
-      throw const ServerException(message: "Failed to get tasks");
+      print("General error on get projects: $e");
+      throw const ServerException(message: "Failed to get projects");
     }
   }
 
   @override
-  Future<List<TaskModel>> getTasksByDate(DateTime date) async {
-    try {
-      final dateString =
-          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-      final response = await dio.get(
-        '/tasks?date=$dateString',
-        options: Options(
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization":
-                "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwMDAvYXBpL2F1dGgvbG9naW4iLCJpYXQiOjE3NTI4NDkwNDEsImV4cCI6MTc1Mjg1MjY0MSwibmJmIjoxNzUyODQ5MDQxLCJqdGkiOiJ1cTBXeW91NnZZbmxlbmFoIiwic3ViIjoiMSIsInBydiI6IjIzYmQ1Yzg5NDlmNjAwYWRiMzllNzAxYzQwMDg3MmRiN2E1OTc2ZjcifQ.8M_iXTN6_C6iwluOGTS0YAMs7afaao-cyQQmzmIJRZs",
-          },
-          validateStatus: (status) => status != null && status < 500,
-        ),
-      );
-
-      if (response.statusCode == 200) {
-        final data = response.data['data']['tasks'] as List;
-        return data.map((json) => TaskModel.fromJson(json)).toList();
-      } else {
-        final errorMessage = _extractErrorMessage(response.data);
-        print(
-            "Get tasks by date failed with status ${response.statusCode}: $errorMessage");
-        throw ServerException(message: errorMessage);
-      }
-    } on DioException catch (e) {
-      final errorMessage = _extractErrorMessage(e.response?.data);
-      print("DioException on get tasks by date: $errorMessage");
-      throw ServerException(message: errorMessage);
-    } on ServerException {
-      rethrow;
-    } catch (e) {
-      print("General error on get tasks by date: $e");
-      throw const ServerException(message: "Failed to get tasks by date");
-    }
-  }
-
-  @override
-  Future<TaskModel> createTask(TaskModel task) async {
+  Future<ProjectModel> createProject(ProjectModel project) async {
     try {
       final response = await dio.post(
-        '/tasks',
-        data: task.toCreateJson(),
+        '/projects',
+        data: project.toCreateJson(),
         options: Options(
           headers: {
             "Content-Type": "application/json",
@@ -104,32 +65,32 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       );
 
       if (response.statusCode == 201) {
-        print("Create task successful: ${response.data}");
-        return TaskModel.fromJson(response.data['data']['task']);
+        print("Create project successful: ${response.data}");
+        return ProjectModel.fromJson(response.data['data']['project']);
       } else {
         final errorMessage = _extractErrorMessage(response.data);
         print(
-            "Create task failed with status ${response.statusCode}: $errorMessage");
+            "Create project failed with status ${response.statusCode}: $errorMessage");
         throw ServerException(message: errorMessage);
       }
     } on DioException catch (e) {
       final errorMessage = _extractErrorMessage(e.response?.data);
-      print("DioException on create task: $errorMessage");
+      print("DioException on create project: $errorMessage");
       throw ServerException(message: errorMessage);
     } on ServerException {
       rethrow;
     } catch (e) {
-      print("General error on create task: $e");
-      throw const ServerException(message: "Failed to create task");
+      print("General error on create project: $e");
+      throw const ServerException(message: "Failed to create project");
     }
   }
 
   @override
-  Future<TaskModel> updateTask(TaskModel task) async {
+  Future<ProjectModel> updateProject(ProjectModel project) async {
     try {
       final response = await dio.put(
-        '/tasks/${task.id}',
-        data: task.toUpdateJson(),
+        '/projects/${project.id}',
+        data: project.toUpdateJson(),
         options: Options(
           headers: {
             "Content-Type": "application/json",
@@ -141,31 +102,31 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       );
 
       if (response.statusCode == 200) {
-        print("Update task successful: ${response.data}");
-        return TaskModel.fromJson(response.data['data']['task']);
+        print("Update project successful: ${response.data}");
+        return ProjectModel.fromJson(response.data['data']['project']);
       } else {
         final errorMessage = _extractErrorMessage(response.data);
         print(
-            "Update task failed with status ${response.statusCode}: $errorMessage");
+            "Update project failed with status ${response.statusCode}: $errorMessage");
         throw ServerException(message: errorMessage);
       }
     } on DioException catch (e) {
       final errorMessage = _extractErrorMessage(e.response?.data);
-      print("DioException on update task: $errorMessage");
+      print("DioException on update project: $errorMessage");
       throw ServerException(message: errorMessage);
     } on ServerException {
       rethrow;
     } catch (e) {
-      print("General error on update task: $e");
-      throw const ServerException(message: "Failed to update task");
+      print("General error on update project: $e");
+      throw const ServerException(message: "Failed to update project");
     }
   }
 
   @override
-  Future<void> deleteTask(int id) async {
+  Future<void> deleteProject(int id) async {
     try {
       final response = await dio.delete(
-        '/tasks/$id',
+        '/Projects/$id',
         options: Options(
           headers: {
             "Content-Type": "application/json",
@@ -177,22 +138,22 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       );
 
       if (response.statusCode == 200) {
-        print("Delete task successful: ${response.data}");
+        print("Delete Project successful: ${response.data}");
       } else {
         final errorMessage = _extractErrorMessage(response.data);
         print(
-            "Delete task failed with status ${response.statusCode}: $errorMessage");
+            "Delete Project failed with status ${response.statusCode}: $errorMessage");
         throw ServerException(message: errorMessage);
       }
     } on DioException catch (e) {
       final errorMessage = _extractErrorMessage(e.response?.data);
-      print("DioException on delete task: $errorMessage");
+      print("DioException on delete Project: $errorMessage");
       throw ServerException(message: errorMessage);
     } on ServerException {
       rethrow;
     } catch (e) {
-      print("General error on delete task: $e");
-      throw const ServerException(message: "Failed to delete task");
+      print("General error on delete Project: $e");
+      throw const ServerException(message: "Failed to delete project");
     }
   }
 
