@@ -7,15 +7,15 @@ sealed class TasksEvent extends Equatable {
 }
 
 class GetTasksEvent extends TasksEvent {
-  const GetTasksEvent();
+  final DateTime? date;
+
+  const GetTasksEvent({this.date});
 
   @override
-  List<Object?> get props => [];
+  List<Object?> get props => [date];
 }
 
 class GetTaskCountsEvent extends TasksEvent {
-
-
   const GetTaskCountsEvent();
 
   @override

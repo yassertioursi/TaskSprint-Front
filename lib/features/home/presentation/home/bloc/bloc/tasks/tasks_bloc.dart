@@ -16,21 +16,21 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
     required this.getTasks,
     required this.getTaskCounts,
   }) : super(const TasksAndCountsState()) {
-    
     on<GetTasksEvent>((event, emit) async {
       final currentState = state;
       TasksAndCountsState newState;
-      
+
       if (currentState is TasksAndCountsState) {
         newState = currentState.copyWith(isLoadingTasks: true);
       } else {
         newState = const TasksAndCountsState(isLoadingTasks: true);
       }
       emit(newState);
-      
+
       try {
-        final failureOrSuccess = await getTasks();
-        
+        // FIX: Pass event.date to getTasks
+        final failureOrSuccess = await getTasks(event.date);
+
         failureOrSuccess.fold(
           (failure) => emit(ErrorTasksState(message: failure.message)),
           (tasks) {
@@ -56,17 +56,17 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
     on<GetTaskCountsEvent>((event, emit) async {
       final currentState = state;
       TasksAndCountsState newState;
-      
+
       if (currentState is TasksAndCountsState) {
         newState = currentState.copyWith(isLoadingCounts: true);
       } else {
         newState = const TasksAndCountsState(isLoadingCounts: true);
       }
       emit(newState);
-      
+
       try {
         final failureOrSuccess = await getTaskCounts();
-        
+
         failureOrSuccess.fold(
           (failure) => emit(ErrorTasksState(message: failure.message)),
           (taskCounts) {
@@ -86,7 +86,8 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
         );
       } catch (e) {
         emit(const ErrorTasksState(
-            message: "An unexpected error occurred while fetching task counts"));
+            message:
+                "An unexpected error occurred while fetching task counts"));
       }
     });
   }

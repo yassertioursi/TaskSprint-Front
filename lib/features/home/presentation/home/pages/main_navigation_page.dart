@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/constants/app_colors.dart';
 import 'package:flutter_application_1/features/home/presentation/home/pages/home_page.dart';
-import 'package:flutter_application_1/features/calendar/presentation/pages/calendar_page.dart';
+import 'package:flutter_application_1/features/home/presentation/calendar/pages/calendar_page.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 

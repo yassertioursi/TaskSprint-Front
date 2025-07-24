@@ -18,10 +18,10 @@ class TaskRepositoryImpl implements TasksRepository {
   });
 
   @override
-  Future<Either<Failure, List<TaskEntity>>> getTasks() async {
+  Future<Either<Failure, List<TaskEntity>>> getTasks(DateTime? date) async {
     if (await networkInfo.isConnected) {
       try {
-        final tasks = await taskRemoteDataSource.getTasks();
+        final tasks = await taskRemoteDataSource.getTasks(date);
         return Right(tasks);
       } on ServerException catch (e) {
         return Left(ServerFailure(e.message));
@@ -31,19 +31,6 @@ class TaskRepositoryImpl implements TasksRepository {
     }
   }
 
-  @override
-  Future<Either<Failure, List<TaskEntity>>> getTasksByDate(DateTime date) async {
-    if (await networkInfo.isConnected) {
-      try {
-        final tasks = await taskRemoteDataSource.getTasksByDate(date);
-        return Right(tasks);
-      } on ServerException catch (e) {
-        return Left(ServerFailure( e.message));
-      }
-    } else {
-      return const Left(OfflineFailure());
-    }
-  }
 
   @override
   Future<Either<Failure, TaskEntity>> createTask(TaskEntity task) async {

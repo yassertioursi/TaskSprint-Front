@@ -4,8 +4,7 @@ import 'package:flutter_application_1/features/home/data/models/task_counts_mode
 import 'package:flutter_application_1/features/home/data/models/task_model.dart';
 
 abstract class TaskRemoteDataSource {
-  Future<List<TaskModel>> getTasks();
-  Future<List<TaskModel>> getTasksByDate(DateTime date);
+  Future<List<TaskModel>> getTasks(DateTime? date);
   Future<TaskCountsModel> getTaskCounts();
   Future<TaskModel> createTask(TaskModel task);
   Future<TaskModel> updateTask(TaskModel task);
@@ -18,10 +17,17 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
   TaskRemoteDataSourceImpl({required this.dio});
 
   @override
-  Future<List<TaskModel>> getTasks() async {
+  Future<List<TaskModel>> getTasks(DateTime? date) async {
     try {
+      String url = "/tasks";
+      if (date != null) {
+        final dateString =
+            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+        url = "/tasks?date=$dateString";
+      }
+   
       final response = await dio.get(
-        '/tasks',
+        url,
         options: Options(
           headers: {
             "Content-Type": "application/json",
@@ -31,68 +37,24 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       );
 
       if (response.statusCode == 200) {
+        print(url) ; 
         final data = response.data['data']['tasks'] as List;
         return data.map((json) => TaskModel.fromJson(json)).toList();
       } else {
         final errorMessage = _extractErrorMessage(response.data);
-        print(
-            "Get tasks failed with status ${response.statusCode}: $errorMessage");
         throw ServerException(message: errorMessage);
       }
     } on DioException catch (e) {
       final errorMessage = _extractErrorMessage(e.response?.data);
-      print("DioException on get tasks: $errorMessage");
       throw ServerException(message: errorMessage);
     } on ServerException {
       rethrow;
     } catch (e) {
-      print("General error on get tasks: $e");
       throw const ServerException(message: "Failed to get tasks");
     }
   }
 
-  @override
-  Future<List<TaskModel>> getTasksByDate(DateTime date) async {
-    try {
-      final dateString =
-          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-      final response = await dio.get(
-        '/tasks?date=$dateString',
-        options: Options(
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization":
-                "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwMDAvYXBpL2F1dGgvbG9naW4iLCJpYXQiOjE3NTI4NDkwNDEsImV4cCI6MTc1Mjg1MjY0MSwibmJmIjoxNzUyODQ5MDQxLCJqdGkiOiJ1cTBXeW91NnZZbmxlbmFoIiwic3ViIjoiMSIsInBydiI6IjIzYmQ1Yzg5NDlmNjAwYWRiMzllNzAxYzQwMDg3MmRiN2E1OTc2ZjcifQ.8M_iXTN6_C6iwluOGTS0YAMs7afaao-cyQQmzmIJRZs",
-          },
-          validateStatus: (status) => status != null && status < 500,
-        ),
-      );
 
-      if (response.statusCode == 200) {
-        final data = response.data['data']['tasks'] as List;
-        return data.map((json) => TaskModel.fromJson(json)).toList();
-      } else {
-        final errorMessage = _extractErrorMessage(response.data);
-        print(
-            "Get tasks by date failed with status ${response.statusCode}: $errorMessage");
-        throw ServerException(message: errorMessage);
-      }
-    } on DioException catch (e) {
-      final errorMessage = _extractErrorMessage(e.response?.data);
-      print("DioException on get tasks by date: $errorMessage");
-      throw ServerException(message: errorMessage);
-    } on ServerException {
-      rethrow;
-    } catch (e) {
-      print("General error on get tasks by date: $e");
-      throw const ServerException(message: "Failed to get tasks by date");
-    }
-  }
-
-
-
- 
-  
   @override
   Future<TaskModel> createTask(TaskModel task) async {
     try {
@@ -129,8 +91,6 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       throw const ServerException(message: "Failed to create task");
     }
   }
-
-
 
   @override
   Future<TaskModel> updateTask(TaskModel task) async {
@@ -223,13 +183,11 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
 
     return "Network error occurred";
   }
-  
-   @override
+
+  @override
   Future<TaskCountsModel> getTaskCounts({DateTime? date}) async {
     try {
       String url = '/tasks/counts';
-      
-     
 
       final response = await dio.get(
         url,

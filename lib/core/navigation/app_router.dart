@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/navigation/app_routes.dart';
 import 'package:flutter_application_1/features/auth/presentation/pages/login_page.dart';
 import 'package:flutter_application_1/features/auth/presentation/pages/signup_page.dart';
-import 'package:flutter_application_1/features/calendar/presentation/pages/calendar_page.dart';
+import 'package:flutter_application_1/features/home/presentation/calendar/pages/calendar_page.dart';
 import 'package:flutter_application_1/features/home/presentation/create_task/pages/create_task.dart';
 import 'package:flutter_application_1/features/home/presentation/home/pages/home_page.dart';
 import 'package:flutter_application_1/features/home/presentation/home/pages/main_navigation_page.dart';

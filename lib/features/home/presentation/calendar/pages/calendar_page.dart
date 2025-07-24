@@ -1,56 +1,114 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/constants/app_colors.dart';
 import 'package:flutter_application_1/core/constants/app_time.dart';
-import 'package:flutter_application_1/features/calendar/presentation/bloc/cubit/calendar_cubit.dart';
-import 'package:flutter_application_1/features/calendar/presentation/bloc/cubit/calendar_state.dart';
-import 'package:flutter_application_1/features/calendar/presentation/widgets/search_field.dart';
+import 'package:flutter_application_1/features/home/presentation/calendar/bloc/cubit/calendar_cubit.dart';
+import 'package:flutter_application_1/features/home/presentation/calendar/bloc/cubit/calendar_state.dart';
+import 'package:flutter_application_1/features/home/presentation/calendar/widgets/search_field.dart';
 import 'package:flutter_application_1/features/home/presentation/home/widgets/TodayTaskItem.dart';
 import 'package:flutter_application_1/features/home/presentation/create_project/presentation/create_project.dart';
+import 'package:flutter_application_1/features/home/presentation/home/bloc/bloc/tasks/tasks_bloc.dart';
+import 'package:flutter_application_1/features/home/presentation/home/bloc/bloc/tasks/tasks_event.dart';
+import 'package:flutter_application_1/features/home/presentation/home/bloc/bloc/tasks/tasks_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:table_calendar/table_calendar.dart';
 
-class CalendarPage extends StatelessWidget {
+class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
 
   @override
+  State<CalendarPage> createState() => _CalendarPageState();
+}
+
+class _CalendarPageState extends State<CalendarPage> {
+  late final TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _onRefresh() async {
+    final selectedDay = context.read<CalendarCubit>().state.selectedDay;
+    if (mounted) {
+      context.read<TasksBloc>().add(GetTasksEvent(date: selectedDay));
+    }
+    await Future.delayed(const Duration(milliseconds: 500));
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => CalendarCubit(),
-      child: Scaffold(
-        backgroundColor: AppColors.bgBlack,
-        body: _buildBody(),
-      ),
+    return Scaffold(
+      backgroundColor: AppColors.bgBlack,
+      body: _buildBody(context),
     );
   }
 
-  Widget _buildBody() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        SizedBox(height: 20.h),
-        _buildSearchWithFilters(),
-        _buildAddButtonRow(),
-        SizedBox(height: 12.h),
-        _buildCalendar(),
-        SizedBox(
-          height: 12.h,
-        ),
-        _buildSearchableTasks(),
-      ],
+  Widget _buildBody(BuildContext context) {
+    return BlocBuilder<CalendarCubit, CalendarState>(
+      builder: (context, calendarState) {
+        return RefreshIndicator(
+          onRefresh: _onRefresh,
+          color: AppColors.mainYellow,
+          backgroundColor: AppColors.bgBlack,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                SizedBox(height: 20.h),
+                _buildSearchWithFilters(),
+                _buildAddButtonRow(),
+                SizedBox(height: 12.h),
+                _buildCalendar(context),
+                SizedBox(height: 12.h),
+                _buildSearchableTasks(context),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildSearchableTasks() {
+  Widget _buildSearchableTasks(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
-      child: Column(
-        children: [
-          _buildTasksAdd(),
-          SizedBox(height: 15.h),
-          TodayTaskItem(title: "Task a", project: "project a")
-        ],
+      child: BlocBuilder<TasksBloc, TasksState>(
+        builder: (context, state) {
+          if (state is LoadingTasks) {
+            return Center(
+              child: Padding(
+                padding: EdgeInsets.all(30.h),
+                child: CircularProgressIndicator(
+                  color: AppColors.mainYellow,
+                ),
+              ),
+            );
+          }
+          if (state is TasksAndCountsState && state.tasks != null) {
+            if (state.tasks!.isEmpty) {
+              return Text("No tasks for this day.");
+            }
+            return Column(
+              children: state.tasks!.map((task) {
+                return TodayTaskItem(
+                  title: task.title,
+                  project: "Project ${task.projectId}",
+                );
+              }).toList(),
+            );
+          }
+          return Text("No tasks loaded.");
+        },
       ),
     );
   }
@@ -77,7 +135,8 @@ class CalendarPage extends StatelessWidget {
       builder: (context) => InkWell(
         onTap: () {
           if (title == "Project") {
-            CreateProjectBottomSheetExtension(context).showCreateProjectBottomSheet();
+            CreateProjectBottomSheetExtension(context)
+                .showCreateProjectBottomSheet();
           } else if (title == "Task") {
             Navigator.of(context).pushNamed('/create-task');
           }
@@ -120,8 +179,8 @@ class CalendarPage extends StatelessWidget {
           Expanded(
             child: _buildSearchBar(),
           ),
-          SizedBox(width: 8.w),
-          _buildFilterButton(),
+          // SizedBox(width: 8.w),
+          // _buildFilterButton(),
         ],
       ),
     );
@@ -140,28 +199,12 @@ class CalendarPage extends StatelessWidget {
   }
 
   Widget _buildSearchBar() {
-    return SearchField(controller: TextEditingController());
+    return SearchField(controller: _searchController);
   }
 
-  Widget _buildFilterButton() {
-    return Container(
-      width: 40.w,
-      height: 36.h,
-      decoration: BoxDecoration(
-        color: AppColors.mainWhite,
-        borderRadius: BorderRadius.circular(8.r),
-      ),
-      child: Center(
-        child: Icon(
-          FontAwesomeIcons.sliders,
-          color: AppColors.mainYellow,
-          size: 22.sp,
-        ),
-      ),
-    );
-  }
 
-  BlocBuilder<CalendarCubit, CalendarState> _buildCalendar() {
+  BlocBuilder<CalendarCubit, CalendarState> _buildCalendar(
+      BuildContext context) {
     return BlocBuilder<CalendarCubit, CalendarState>(
       builder: (context, state) {
         return Padding(
@@ -180,6 +223,7 @@ class CalendarPage extends StatelessWidget {
                 context
                     .read<CalendarCubit>()
                     .selectDay(selectedDay, focusedDay);
+                context.read<TasksBloc>().add(GetTasksEvent(date: selectedDay));
               },
               onPageChanged: (focusedDay) {
                 context.read<CalendarCubit>().changeFocusedDay(focusedDay);
