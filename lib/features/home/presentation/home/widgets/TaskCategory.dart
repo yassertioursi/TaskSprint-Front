@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/constants/app_colors.dart';
+import 'package:flutter_application_1/core/navigation/app_routes.dart';
+import 'package:flutter_application_1/features/home/presentation/home/widgets/TodayTaskItem.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -58,7 +60,32 @@ class TaskCategory extends StatelessWidget {
           ],
         ),
         IconButton(
-          onPressed: () {},
+          onPressed: () {
+            String status;
+            switch (categoryName.toLowerCase()) {
+              case 'to do':
+                status = 'todo';
+                break;
+              case 'done':
+                status = 'done';
+                break;
+              case 'in progress':
+                status = 'in_progress';
+                break;
+              default:
+                status = 'todo';
+            }
+
+            Navigator.of(context).pushNamed(
+              AppRoutes.tasksPerStatus,
+              arguments: {
+                'status': status,
+                'categoryName': categoryName,
+                'taskCount': taskCount,
+                'totalTasks': totalTasks,
+              },
+            );
+          },
           icon: FaIcon(
             FontAwesomeIcons.angleRight,
             color: AppColors.mainYellow, 

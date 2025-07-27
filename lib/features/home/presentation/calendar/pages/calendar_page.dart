@@ -28,6 +28,9 @@ class _CalendarPageState extends State<CalendarPage> {
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    _searchController.addListener(() {
+      setState(() {}); // Rebuild when search text changes
+    });
   }
 
   @override
@@ -70,7 +73,11 @@ class _CalendarPageState extends State<CalendarPage> {
                 SizedBox(height: 12.h),
                 _buildCalendar(context),
                 SizedBox(height: 12.h),
+                   _buildTasksAdd() , 
+                    SizedBox(height: 12.h),
                 _buildSearchableTasks(context),
+               
+             
               ],
             ),
           ),
@@ -94,12 +101,29 @@ class _CalendarPageState extends State<CalendarPage> {
               ),
             );
           }
+          if (state is TasksAndCountsState && state.isLoadingTasks) {
+            return Center(
+              child: Padding(
+                padding: EdgeInsets.all(30.h),
+                child: CircularProgressIndicator(
+                  color: AppColors.mainYellow,
+                ),
+              ),
+            );
+          }
           if (state is TasksAndCountsState && state.tasks != null) {
-            if (state.tasks!.isEmpty) {
+            final query = _searchController.text.trim().toLowerCase();
+            final filteredTasks = query.isEmpty
+                ? state.tasks!
+                : state.tasks!
+                    .where((task) => task.title.toLowerCase().contains(query))
+                    .toList();
+
+            if (filteredTasks.isEmpty) {
               return Text("No tasks for this day.");
             }
             return Column(
-              children: state.tasks!.map((task) {
+              children: filteredTasks.map((task) {
                 return TodayTaskItem(
                   title: task.title,
                   project: "Project ${task.projectId}",
@@ -114,19 +138,22 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   Widget _buildTasksAdd() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          "Tasks",
-          style: TextStyle(
-            color: AppColors.mainYellow,
-            fontSize: 17.sp,
-            fontWeight: FontWeight.bold,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            "Tasks",
+            style: TextStyle(
+              color: AppColors.mainYellow,
+              fontSize: 17.sp,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        _buildAddButton("Task"),
-      ],
+          _buildAddButton("Task"),
+        ],
+      ),
     );
   }
 
@@ -294,5 +321,22 @@ extension CreateProjectBottomSheetExtension on BuildContext {
       isDismissible: true,
       builder: (context) => const CreateProjectBottomSheet(),
     );
+  }
+}
+
+extension TasksBlocExtension on TasksBloc {
+  void handleGetTasksEvent(GetTasksEvent event) {
+    on<GetTasksEvent>((event, emit) async {
+      emit(LoadingTasks());
+      try {
+        final failureOrSuccess = await getTasks(event.date);
+        failureOrSuccess.fold(
+          (failure) => emit(ErrorTasksState(message: failure.message)),
+          (tasks) => emit(TasksAndCountsState(tasks: tasks, isLoadingTasks: false)),
+        );
+      } catch (e) {
+        emit(const ErrorTasksState(message: "An unexpected error occurred"));
+      }
+    });
   }
 }

@@ -8,11 +8,12 @@ sealed class TasksEvent extends Equatable {
 
 class GetTasksEvent extends TasksEvent {
   final DateTime? date;
+  final String? status;
 
-  const GetTasksEvent({this.date});
+  const GetTasksEvent({this.date, this.status});
 
   @override
-  List<Object?> get props => [date];
+  List<Object?> get props => [date ,status];
 }
 
 class GetTaskCountsEvent extends TasksEvent {

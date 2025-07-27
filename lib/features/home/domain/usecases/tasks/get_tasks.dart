@@ -8,7 +8,7 @@ class GetTasksUseCase {
 
   GetTasksUseCase(this.repository);
 
-  Future<Either<Failure, List<TaskEntity>>> call([DateTime? date]) async {
-    return await repository.getTasks(date);
+  Future<Either<Failure, List<TaskEntity>>> call([DateTime? date , String? status]) async {
+    return await repository.getTasks(date, status: status);
   }
 }

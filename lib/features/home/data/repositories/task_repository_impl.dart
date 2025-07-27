@@ -18,24 +18,26 @@ class TaskRepositoryImpl implements TasksRepository {
   });
 
   @override
-  Future<Either<Failure, List<TaskEntity>>> getTasks(DateTime? date) async {
-    if (await networkInfo.isConnected) {
-      try {
-        final tasks = await taskRemoteDataSource.getTasks(date);
+  Future<Either<Failure, List<TaskEntity>>> getTasks(DateTime? date,
+      {String? status}) async {
+    try {
+      if (await networkInfo.isConnected) {
+        final tasks = await taskRemoteDataSource.getTasks(date, status: status);
         return Right(tasks);
-      } on ServerException catch (e) {
-        return Left(ServerFailure(e.message));
+      } else {
+        return const Left(OfflineFailure());
       }
-    } else {
-      return const Left(OfflineFailure());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
   }
 
-
   @override
   Future<Either<Failure, TaskEntity>> createTask(TaskEntity task) async {
-    if (await networkInfo.isConnected) {
-      try {
+    try {
+      if (await networkInfo.isConnected) {
         final taskModel = TaskModel(
           id: task.id,
           title: task.title,
@@ -51,18 +53,20 @@ class TaskRepositoryImpl implements TasksRepository {
 
         final createdTask = await taskRemoteDataSource.createTask(taskModel);
         return Right(createdTask);
-      } on ServerException catch (e) {
-        return Left(ServerFailure( e.message));
+      } else {
+        return const Left(OfflineFailure());
       }
-    } else {
-      return const Left(OfflineFailure());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
   }
 
   @override
   Future<Either<Failure, TaskEntity>> updateTask(TaskEntity task) async {
-    if (await networkInfo.isConnected) {
-      try {
+    try {
+      if (await networkInfo.isConnected) {
         final taskModel = TaskModel(
           id: task.id,
           title: task.title,
@@ -78,39 +82,45 @@ class TaskRepositoryImpl implements TasksRepository {
 
         final updatedTask = await taskRemoteDataSource.updateTask(taskModel);
         return Right(updatedTask);
-      } on ServerException catch (e) {
-        return Left(ServerFailure(e.message));
+      } else {
+        return const Left(OfflineFailure());
       }
-    } else {
-      return const Left(OfflineFailure());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
   }
 
   @override
   Future<Either<Failure, Unit>> deleteTask(int id) async {
-    if (await networkInfo.isConnected) {
-      try {
+    try {
+      if (await networkInfo.isConnected) {
         await taskRemoteDataSource.deleteTask(id);
         return const Right(unit);
-      } on ServerException catch (e) {
-        return Left(ServerFailure( e.message));
+      } else {
+        return const Left(OfflineFailure());
       }
-    } else {
-      return const Left(OfflineFailure());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
   }
 
   @override
   Future<Either<Failure, TaskCounts>> getTaskCounts() async {
-    if (await networkInfo.isConnected) {
-      try {
+    try {
+      if (await networkInfo.isConnected) {
         final taskCounts = await taskRemoteDataSource.getTaskCounts();
         return Right(taskCounts);
-      } on ServerException catch (e) {
-        return Left(ServerFailure(e.message));
+      } else {
+        return const Left(OfflineFailure());
       }
-    } else {
-      return const Left(OfflineFailure());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
   }
 }

@@ -4,7 +4,7 @@ import 'package:flutter_application_1/features/home/data/models/task_counts_mode
 import 'package:flutter_application_1/features/home/data/models/task_model.dart';
 
 abstract class TaskRemoteDataSource {
-  Future<List<TaskModel>> getTasks(DateTime? date);
+  Future<List<TaskModel>> getTasks(DateTime? date, {String? status});
   Future<TaskCountsModel> getTaskCounts();
   Future<TaskModel> createTask(TaskModel task);
   Future<TaskModel> updateTask(TaskModel task);
@@ -17,15 +17,25 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
   TaskRemoteDataSourceImpl({required this.dio});
 
   @override
-  Future<List<TaskModel>> getTasks(DateTime? date) async {
+  Future<List<TaskModel>> getTasks(DateTime? date, {String? status}) async {
     try {
       String url = "/tasks";
+      List<String> queryParams = [];
+
       if (date != null) {
         final dateString =
             '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-        url = "/tasks?date=$dateString";
+        queryParams.add('date=$dateString');
       }
-   
+      if (status != null && status.isNotEmpty) {
+        queryParams.add('status=$status');
+      }
+      if (queryParams.isNotEmpty) {
+        url += '?${queryParams.join('&')}';
+      }
+
+
+
       final response = await dio.get(
         url,
         options: Options(
@@ -37,7 +47,6 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       );
 
       if (response.statusCode == 200) {
-        print(url) ; 
         final data = response.data['data']['tasks'] as List;
         return data.map((json) => TaskModel.fromJson(json)).toList();
       } else {
@@ -53,7 +62,6 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       throw const ServerException(message: "Failed to get tasks");
     }
   }
-
 
   @override
   Future<TaskModel> createTask(TaskModel task) async {

@@ -17,36 +17,17 @@ class TasksBloc extends Bloc<TasksEvent, TasksState> {
     required this.getTaskCounts,
   }) : super(const TasksAndCountsState()) {
     on<GetTasksEvent>((event, emit) async {
-      final currentState = state;
-      TasksAndCountsState newState;
-
-      if (currentState is TasksAndCountsState) {
-        newState = currentState.copyWith(isLoadingTasks: true);
-      } else {
-        newState = const TasksAndCountsState(isLoadingTasks: true);
-      }
-      emit(newState);
+      emit(LoadingTasks()); // Emit loading state immediately!
 
       try {
-        // FIX: Pass event.date to getTasks
-        final failureOrSuccess = await getTasks(event.date);
+        final failureOrSuccess = await getTasks(event.date,  event.status);
 
         failureOrSuccess.fold(
           (failure) => emit(ErrorTasksState(message: failure.message)),
-          (tasks) {
-            if (state is TasksAndCountsState) {
-              final currentState = state as TasksAndCountsState;
-              emit(currentState.copyWith(
-                tasks: tasks,
-                isLoadingTasks: false,
-              ));
-            } else {
-              emit(TasksAndCountsState(
-                tasks: tasks,
-                isLoadingTasks: false,
-              ));
-            }
-          },
+          (tasks) => emit(TasksAndCountsState(
+            tasks: tasks,
+            isLoadingTasks: false,
+          )),
         );
       } catch (e) {
         emit(const ErrorTasksState(message: "An unexpected error occurred"));
